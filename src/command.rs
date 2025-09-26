@@ -1,4 +1,5 @@
-use crate::storage::Redis;
+use std::process;
+
 
 pub enum Command{
     GET {key:String},
@@ -46,26 +47,10 @@ impl Command{
 
     }
 
-       pub fn handle_get(key: String, redis: &Redis) {
-        match redis.get(&key) {
-            Some(value) => println!("Value: {}", value),
-            None => println!("Key not found"),
-        }
-    }
-
-    pub fn handle_set(key: String, value: String, expiry: Option<String>, redis: &mut Redis) {
-        let actual_expiry = expiry.unwrap_or("100".to_string());
-        redis.set(key.clone(), value.clone());
-        println!("Set key: {} with expiry: {}", key, actual_expiry);
-    }
-
-    pub fn handle_delete(key: String, redis: &mut Redis) {
-        redis.delete(&key);
-        println!("Deleted key: {}", key);
-    }
+        
 
     pub fn handle_exit() {
-        println!("You want to exit");
+        process::exit(0)
     }
 
     pub fn handle_unknown() {
