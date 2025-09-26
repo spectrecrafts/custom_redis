@@ -1,53 +1,48 @@
-use std::{collections::HashMap, io};
-use std::process;
-// #[derive(Debug)]
+use std::io::{self, Write};
+use custom_redis::command::Command;
+use custom_redis::storage::Redis;
 
-// struct Redis{
-//     id:String,
-//     key:String,
-//     value:String
-// }
+fn main() {
+    let mut redis = Redis::open("redis.wal");
 
-// enum Command{
-//     get,
-//     set
-// }
+    loop {
+        print!("> ");
+        io::stdout().flush().unwrap();
 
+        let mut input = String::new();
+        if io::stdin().read_line(&mut input).is_err() {
+            eprintln!("Failed to read input");
+            continue;
+        }
 
-fn main(){
-    let mut store: HashMap<String,String>= HashMap::new();
-   loop {
+        let command = Command::parse_inputs(input);
 
-    
-    let mut command= String::new();
-
-    if command=="exit"{
-            process::exit(0)
+        match command {
+            Command::GET { key } => {
+                match redis.get(&key) {
+                    Some(value) => println!("{}", value),
+                    None => println!("(nil)"),
+                }
+            }
+            Command::SET { key, value, .. } => {
+                redis.set(key.clone(), value.clone());
+                println!("OK");
+            }
+            Command::DEL { key } => {
+                let deleted = redis.delete(&key);
+                if deleted {
+                    println!("(1)");
+                } else {
+                    println!("(0)");
+                }
+            }
+            Command::EXIT => {
+                Command::handle_exit();
+                break;
+            }
+            Command::UNKNOWN => {
+                Command::handle_unknown();
+            }
+        }
     }
-    
-    io::stdin().read_line(&mut command).expect("Failed to read line"); 
-    let command_parts: Vec<String>=command.trim().split_whitespace()
-.map(String::from).collect();
-
-    if (command_parts[0].to_lowercase()=="set"&&command_parts.len()<3)||(command_parts[0].to_lowercase()=="get" && command_parts.len()!=2){
-        println!("Invalid format");
-        continue;
-    }
-
-
-    match command_parts[0].to_lowercase().as_str()
-{
-"get"=>{
-match store.get(&command_parts[1]){
-   Some(val)=>println!("{}",val),
-    None=>println!("The value does not exist")
-}
-
-
-},
-    "set"=>{store.insert(command_parts[1].clone(), command_parts[2].clone());println!("OK")},
-    _other=>println!("Invalid command")
-}
-   }
-
 }
